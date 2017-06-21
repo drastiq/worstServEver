@@ -13,11 +13,11 @@ namespace sieciServ
         public TcpClient client { get; set; }
         public String login { get; set; }
         public int id { get; set; }
-        public String Rot { get; set; }
+        public int Rot { get; set; }
         public bool isAlive { get; set; }
         public int posX { get; set; }
         public int posY { get; set; }
-        public Player(TcpClient _client, String _login, int _id, String _rot, bool _isAlive,int _posX,int _posY) {
+        public Player(TcpClient _client, String _login, int _id, int _rot, bool _isAlive,int _posX,int _posY) {
             client = _client;
             login = _login;
             id = _id;

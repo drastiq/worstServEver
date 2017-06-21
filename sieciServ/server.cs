@@ -24,6 +24,7 @@ namespace sieciServ
         private List<Player> _playerList = new List<Player>();
         private Random rand = new Random();
         private int[,] board;
+        private int Pos;
         public server(string name, int port, int _playerReq,int _tick)
         {
             // Set some of the basic data
@@ -76,7 +77,7 @@ namespace sieciServ
                         if ((p != null && p.Contains("LOGIN")) && !playerLoginCheck.Any() && !logged)
                         {
                             _playerList.Add(new Player(client, p.Split(' ')[1], _clients.IndexOf(client) + 1,
-                                            "X", true, rand.Next(0, 100), rand.Next(0, 100)));
+                                            0, true, rand.Next(0, 100), rand.Next(0, 100)));
                             var playerCl = _playerList.First(x => x.client == client);
                             Console.WriteLine("added: " + playerCl.login);
                             /*
@@ -121,37 +122,38 @@ namespace sieciServ
                         if (loggedplayers < _playerList.Count)
                         {
                             String p = ReceivePacket(player.client).GetAwaiter().GetResult();
+                           if(p!=null) Console.WriteLine(p + "Len" + p.Length);
                             var isPos = _playerList.First(x => x.client == player.client).Rot;
                             bool check = false;
                             if(p!=null)Console.WriteLine(p.Length);
-                            if (p != null && p.Contains("BEGIN N") && p.Length == 8 && isPos.Contains("X") && !check)
+                            if (p != null && p.Contains("BEGIN N") && p.Length == 8 && isPos==0 && !check)
                             {
                                 // Console.WriteLine(p + "Len" + p.Length);
-                                _playerList.First(x => x.client == player.client).Rot = p;
+                                _playerList.First(x => x.client == player.client).Rot = 1;
                                 sendMsg(player.client, "OK").GetAwaiter();
                                 check = true;
                                 loggedplayers++;
                             }
-                            if (p != null && p.Contains("BEGIN S") && p.Length == 8 && isPos.Contains("X") && !check)
+                            if (p != null && p.Contains("BEGIN S") && p.Length == 8 && isPos==0 && !check)
                             {
 
-                                _playerList.First(x => x.client == player.client).Rot = p;
+                                _playerList.First(x => x.client == player.client).Rot = 3;
                                 sendMsg(player.client, "OK").GetAwaiter();
                                 check = true;
                                 loggedplayers++;
                             }
-                            if (p != null && p.Contains("BEGIN W") && p.Length == 8 && isPos.Contains("X") && !check)
+                            if (p != null && p.Contains("BEGIN W") && p.Length == 8 && isPos==0 && !check)
                             {
 
-                                _playerList.First(x => x.client == player.client).Rot = p;
+                                _playerList.First(x => x.client == player.client).Rot = 4;
                                 sendMsg(player.client, "OK").GetAwaiter();
                                 check = true;
                                 loggedplayers++;
                             }
-                            if (p != null && p.Contains("BEGIN E") && p.Length == 8 && isPos.Contains("X") && !check)
+                            if (p != null && p.Contains("BEGIN E") && p.Length == 8 && isPos==0 && !check)
                             {
 
-                                _playerList.First(x => x.client == player.client).Rot = p;
+                                _playerList.First(x => x.client == player.client).Rot = 2;
                                 sendMsg(player.client, "OK").GetAwaiter();
                                 check = true;
                                 loggedplayers++;
@@ -203,36 +205,109 @@ namespace sieciServ
                             }
                             foreach (var player in _playerList)
                             {
-                                sendMsg(player.client, boardFormated).GetAwaiter();
+                                if (_playerList.First(x => x.client == player.client).isAlive) { 
+                                    sendMsg(player.client, boardFormated).GetAwaiter();
                                 Console.WriteLine("Board send to " + player.client.Client.RemoteEndPoint);
+                                     }  
                             }
                             //TODO simulate move
                             foreach (var player in _playerList)
                             {
-                                Console.WriteLine("TICKmove: " + player.Rot);
-                                if (player.Rot.Contains("BEGIN W"))
-                                {
-                                    board[player.posX, player.posY - 1] = player.id;
-                                   // Console.WriteLine("inN");
-                                    _playerList.First(x => x.client == player.client).posY = player.posY - 1;
-                                }
-                                if (player.Rot.Contains("BEGIN E"))
-                                {
-                                    board[player.posX, player.posY + 1] = player.id;
-                                    _playerList.First(x => x.client == player.client).posY = player.posY + 1;
-                                }
-                                if (player.Rot.Contains("BEGIN S"))
-                                {
-                                    board[player.posX + 1, player.posY] = player.id;
-                                    _playerList.First(x => x.client == player.client).posX = player.posX + 1;
-                                }
-                                if (player.Rot.Contains("BEGIN N"))
-                                {
-                                    board[player.posX - 1, player.posY] = player.id;
-                                    _playerList.First(x => x.client == player.client).posX = player.posX - 1;
-                                }
-                                Console.WriteLine("TICKmove: " + player.id);
+                               
+                                int leftPlayers =  _playerList.Where(x=> x.isAlive==true).Count();
+                                    // Console.WriteLine("TICKmove: " + player.Rot);
+                                    if (_playerList.First(x => x.client == player.client).isAlive)
+                                    {
+                                        String p = ReceivePacket(player.client).GetAwaiter().GetResult();
+                                    if (p != null &&(p.Contains("MOVE S")|| p.Contains("MOVE R")|| p.Contains("MOVE L"))&& p.Length == 7)
+                                    {
+
+                                        _playerList.First(x => x.client == player.client).Rot=Move(player.Rot, p);
+                                        sendMsg(player.client, "OK").GetAwaiter();
+
+                                        loggedplayers++;
+                                    }
+                                    if (p != null && !(p.Contains("MOVE S") || p.Contains("MOVE R") || p.Contains("MOVE L")))
+                                    {
+                                        sendMsg(player.client, "ERROR").GetAwaiter();
+                                    }
+                                        if (player.Rot==4)
+                                        {
+                                            if (board[player.posX, player.posY - 1] == 0 )
+                                            {
+                                                board[player.posX, player.posY - 1] = player.id;
+                                                // Console.WriteLine("inN");
+                                                _playerList.First(x => x.client == player.client).posY = player.posY - 1;
+
+                                            }
+                                            else
+                                            {
+                                                _playerList.First(x => x.client == player.client).isAlive = false;
+                                            }
+
+                                        }
+                                        if (player.Rot==2)
+                                        {
+                                            if (board[player.posX, player.posY + 1] == 0 || player.posY + 1 < 100)
+                                            {
+                                                board[player.posX, player.posY + 1] = player.id;
+                                                _playerList.First(x => x.client == player.client).posY = player.posY + 1;
+                                            }
+                                            else
+                                            {
+                                                _playerList.First(x => x.client == player.client).isAlive = false;
+                                            }
+
+                                        }
+                                        if (player.Rot==3)
+                                        {
+                                            if (board[player.posX + 1, player.posY] == 0 || player.posX + 1<100)
+                                            {
+                                                board[player.posX + 1, player.posY] = player.id;
+                                                _playerList.First(x => x.client == player.client).posX = player.posX + 1;
+
+                                            }
+                                            else
+                                            {
+                                                _playerList.First(x => x.client == player.client).isAlive = false;
+                                            }
+                                        }
+                                        if (player.Rot==1)
+                                        {
+                                            if (board[player.posX - 1, player.posY] == 0  || player.posX - 1 > 0)
+                                            {
+                                                board[player.posX - 1, player.posY] = player.id;
+                                                _playerList.First(x => x.client == player.client).posX = player.posX - 1;
+                                            }
+                                            else
+                                            {
+                                                _playerList.First(x => x.client == player.client).isAlive = false;
+                                            }
+                                        }
+                                    }
+                                    if(!player.isAlive)
+                                    {
+                                        sendMsg(player.client, "LOST else " + leftPlayers).GetAwaiter();
+                                    }
+
+                                    //   Console.WriteLine("TICKmove: " + player.id);
+                                    if (leftPlayers == 1)
+                                    {
+                                       
+                                        sendMsg(player.client, "WIN").GetAwaiter();
+                                        foreach (var player1 in _playerList)
+                                        {
+                                            _playerList.First(x => x.client == player1.client).isAlive = true;
+                                        }
+                                        boardInit =false;
+                                        gameStart = false;
+                                        gameState = 2;
+
+                                    }
+                                
+
                             }
+
                             boardFormated = "";
 
                             Thread.Sleep(Tick);
@@ -246,6 +321,33 @@ namespace sieciServ
 
         }
        
+        public int Move(int rota,String move)
+        {
+            int rot = rota;
+            int maxRot = 4;
+            int minRot = 1;
+            if (move.Contains("R"))
+            {
+                rot++;
+            }
+            if (move.Contains("L"))
+            {
+                rot--;
+            }
+            if (move.Contains("S"))
+            {
+               return rot;
+            }
+            if (rot < minRot)
+            {
+                return rot = 4;
+            }
+            if (rot > maxRot)
+            {
+               return rot = 0;
+            }
+            return rot;
+        }
         public int[,] initBoard()
         {
             int[,] board = new int[100, 100];
