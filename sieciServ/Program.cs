@@ -10,6 +10,12 @@ namespace sieciServ
     {
         static void Main(string[] args)
         {
+            server serv = new server("Test", 9000,2);
+            serv.run();
+
+
+
+
         }
     }
 }
