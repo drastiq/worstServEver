@@ -52,13 +52,13 @@ namespace sieciServ
         {
             if (msg.Length > 0)
             {
-                Console.WriteLine(msg);
+                Console.WriteLine(msg+"\n");
 
                 try
                 {
                     using (StreamWriter sw = File.AppendText(Logger.filePath))
                     {
-                        sw.WriteAsync(DateTime.Now.ToShortDateString() + " " + DateTime.Now.ToShortTimeString() + " " + msg).GetAwaiter();
+                        sw.WriteAsync(DateTime.Now.ToShortDateString() + " " + DateTime.Now.ToShortTimeString() + " " + msg + " \n").GetAwaiter() ;
 
                         sw.Flush();
                         sw.Close();
@@ -67,7 +67,7 @@ namespace sieciServ
                 catch (Exception e)
                 {
 
-                    Console.WriteLine("logger lock") ;
+                    
                 }
 
       

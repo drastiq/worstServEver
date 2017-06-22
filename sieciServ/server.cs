@@ -452,7 +452,7 @@ namespace sieciServ
 
                 string msg = Encoding.UTF8.GetString(lengthBuffer);
                 packet = msg;
-
+                Logger.WriteLine("received: "+ packet+ " From: " + client.Client.RemoteEndPoint);
                
             }
             catch (Exception e)
