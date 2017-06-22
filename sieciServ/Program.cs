@@ -11,7 +11,7 @@ namespace sieciServ
     {
         static void Main(string[] args)
         {
-             server serv = new server("Test", 9000,2,2,500);
+             server serv = new server("Test", 9000,8,3,500);
             serv.run();
 
            
