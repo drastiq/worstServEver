@@ -67,300 +67,330 @@ namespace sieciServ
 
                 if (_listener.Pending())
                     newConnectionTasks.Add(_handleNewConnection());
-                if (gameState == 0)
-                {
-                    foreach (var client in _clients)
-                    {
-                        String p = ReceivePacket(client).GetAwaiter().GetResult();
-
-
-                        //var item = _playerList.FirstOrDefault(x => x.client == client && x.login == "");
-
-                        bool logged = false;
-                        var playerLoginCheck = _playerList.Where(tempPlayerCheck => tempPlayerCheck.client.Client.RemoteEndPoint == client.Client.RemoteEndPoint &&
-                                    tempPlayerCheck.login != null);
-
-
-                        if ((p != null && p.Contains("LOGIN")) && !playerLoginCheck.Any() && !logged)
-                        {
-                            _playerList.Add(new Player(client, p.Split(' ')[1], _clients.IndexOf(client) + 1,
-                                            0, true, 0, 0,0));
-                            var playerCl = _playerList.First(x => x.client == client);
-                            Logger.WriteLine("added: " + playerCl.login);
-                            /*
-                            Logger.WriteLine(playerCl.id);
-                            Logger.WriteLine(playerCl.login);
-                            Logger.WriteLine(playerCl.posX);
-                            Logger.WriteLine(playerCl.posY);
-                            Logger.WriteLine(playerCl.Rot);*/
-                            sendMsg(client, "OK").GetAwaiter();
-                            logged = true;
-                            if (_playerList.Count == playerReq) gameState = 1;
-                        }
-                        if ((p != null) && playerLoginCheck.Any() && !logged)
-                        {
-                            sendMsg(client, "ERROR").GetAwaiter();
-                        }
-                    }
-                }
-                if (gameState == 1 )
-                {
-                    if (roundLeft == 0)
-                    {
-                        var rank = _playerList.OrderBy(r=>r.points).ToList();
-                        String endrank = "ENDGAME ";
-                        foreach (var r in rank)
-                        {
-                            endrank += r.login.ToString()+" ";
-                        }
-                        foreach(var r in rank)
-                        {
-                            sendMsg(r.client,endrank).GetAwaiter();
-                        }
-                        Thread.Sleep(100000000);
-                    }
-                    Logger.WriteLine("Step1");
-                    //Thread.Sleep(5000);
-                    //rand.Next(0, 100)
-                    String playerpos = "";
-                    foreach (var pl in _playerList)
-                    {
-                        _playerList.First(x => x.client == pl.client).posX = rand.Next(0, 100);
-                        _playerList.First(x => x.client == pl.client).posY = rand.Next(0, 100);
-                        _playerList.First(x => x.client == pl.client).isAlive = true;
-                    }
-                    foreach (var pl in _playerList)
-                    {
-                        if (roundCount == roundLeft) sendMsg(pl.client, "START " + pl.id).GetAwaiter();
-                        playerpos += (pl.posX.ToString() + " " + pl.posY.ToString() + " ");
-                    }
-                    foreach (var pl in _playerList)
-                    {
-                        sendMsg(pl.client, playerpos).GetAwaiter();
-                    }
-                    gameState = 2;
-                }
-                if (gameState == 2 && roundLeft!=0)
-                {
-                    // Logger.WriteLine("Step2");
-                   // Logger.WriteLine("Step2");
-                    //Thread.Sleep(5000);
-
-                    foreach (var player in _playerList)
-                    {
-                        if (loggedplayers < _playerList.Count)
-                        {
-                            String p = ReceivePacket(player.client).GetAwaiter().GetResult();
-                           // if (p != null) Logger.WriteLine(p + "Len" + p.Length);
-                            var isPos = _playerList.First(x => x.client == player.client).Rot;
-                            bool check = false;
-                           // if (p != null) Logger.WriteLine(p.Length);
-                            if (p != null && p.Contains("BEGIN N") && p.Length == 8 && isPos == 0 && !check)
-                            {
-                                // Logger.WriteLine(p + "Len" + p.Length);
-                                _playerList.First(x => x.client == player.client).Rot = 1;
-                                sendMsg(player.client, "OK").GetAwaiter();
-                                check = true;
-                                loggedplayers++;
-                            }
-                            if (p != null && p.Contains("BEGIN S") && p.Length == 8 && isPos == 0 && !check)
-                            {
-
-                                _playerList.First(x => x.client == player.client).Rot = 3;
-                                sendMsg(player.client, "OK").GetAwaiter();
-                                check = true;
-                                loggedplayers++;
-                            }
-                            if (p != null && p.Contains("BEGIN W") && p.Length == 8 && isPos == 0 && !check)
-                            {
-
-                                _playerList.First(x => x.client == player.client).Rot = 4;
-                                sendMsg(player.client, "OK").GetAwaiter();
-                                check = true;
-                                loggedplayers++;
-                            }
-                            if (p != null && p.Contains("BEGIN E") && p.Length == 8 && isPos == 0 && !check)
-                            {
-
-                                _playerList.First(x => x.client == player.client).Rot = 2;
-                                sendMsg(player.client, "OK").GetAwaiter();
-                                check = true;
-                                loggedplayers++;
-                            }
-                            if (p != null && !p.Contains("BEGIN E") && !p.Contains("BEGIN W") && !p.Contains("BEGIN S") && !p.Contains("BEGIN N") && p.Length != 8)
-                            {
-                                sendMsg(player.client, "ERROR").GetAwaiter();
-                            }
-                        }
-                        if (loggedplayers == _playerList.Count)
-                        {
-                            loggedplayers = 0;
-                            gameState = 3;
-                        }
-
-                    }
-
-                }
-                if (gameState == 3)
-                {
-                    
-                    //Logger.WriteLine("Step3");
-                    if (!boardInit)
-                    {
-                        board = initBoard();
-                        boardInit = true;
-                    }
-                    // Thread.Sleep(1000);
-                    if (boardInit)
-                    {
-                        if (!gameStart)
-                        {
-                            foreach (var player in _playerList)
-                            {
-                                sendMsg(player.client, "GAME").GetAwaiter();
-                            }
-                            gameStart = true;
-                        }
-                        if (gameStart)
-                        {
-
-                            String boardFormated = "";
-                            for (int i = 0; i < board.GetLength(0); i++)
-                            {
-                                for (int k = 0; k < board.GetLength(1); k++)
-                                {
-                                    boardFormated += (board[i, k]) + " ";
-                                }
-
-                                boardFormated += "\n";
-                            }
-                            foreach (var player in _playerList)
-                            {
-                                if (_playerList.First(x => x.client == player.client).isAlive)
-                                {
-                                    sendMsg(player.client, boardFormated).GetAwaiter();
-                                    Logger.WriteLine("Board send to " + player.client.Client.RemoteEndPoint);
-
-                                }
-                            }
-                            //TODO simulate move
-                            foreach (var player in _playerList)
-                            {
-
-                                int leftPlayers = _playerList.Where(x => x.isAlive == true).Count();
-                                // Logger.WriteLine("TICKmove: " + player.Rot);
-                                if (_playerList.First(x => x.client == player.client).isAlive)
-                                {
-                                    String p = ReceivePacket(player.client).GetAwaiter().GetResult();
-                                    if (p != null && (p.Contains("MOVE S") || p.Contains("MOVE R") || p.Contains("MOVE L")) && p.Length == 7)
-                                    {
-
-                                        _playerList.First(x => x.client == player.client).Rot = Move(player.Rot, p);
-                                        sendMsg(player.client, "OK").GetAwaiter();
-
-
-                                    }
-                                    if (p != null && !(p.Contains("MOVE S") || p.Contains("MOVE R") || p.Contains("MOVE L")))
-                                    {
-                                        sendMsg(player.client, "ERROR").GetAwaiter();
-                                    }
-                                    if (player.Rot == 4)
-                                    {
-                                        if (player.posY - 1 > 0 && board[player.posX, player.posY - 1] == 0)
-                                        {
-                                            board[player.posX, player.posY - 1] = player.id;
-                                            // Logger.WriteLine("inN");
-                                            _playerList.First(x => x.client == player.client).posY = player.posY - 1;
-
-                                        }
-                                        else
-                                        {
-                                            _playerList.First(x => x.client == player.client).isAlive = false;
-                                        }
-
-                                    }
-                                    if (player.Rot == 2)
-                                    {
-                                        if (player.posY + 1 < 100 && board[player.posX, player.posY + 1] == 0)
-                                        {
-                                            board[player.posX, player.posY + 1] = player.id;
-                                            _playerList.First(x => x.client == player.client).posY = player.posY + 1;
-                                        }
-                                        else
-                                        {
-                                            _playerList.First(x => x.client == player.client).isAlive = false;
-                                        }
-
-                                    }
-                                    if (player.Rot == 3)
-                                    {
-                                        if (player.posX + 1 < 100 && board[player.posX + 1, player.posY] == 0)
-                                        {
-                                            board[player.posX + 1, player.posY] = player.id;
-                                            _playerList.First(x => x.client == player.client).posX = player.posX + 1;
-
-                                        }
-                                        else
-                                        {
-                                            _playerList.First(x => x.client == player.client).isAlive = false;
-                                        }
-                                    }
-                                    if (player.Rot == 1)
-                                    {
-                                        if (player.posX - 1 > 0 && board[player.posX - 1, player.posY] == 0)
-                                        {
-                                            board[player.posX - 1, player.posY] = player.id;
-                                            _playerList.First(x => x.client == player.client).posX = player.posX - 1;
-                                        }
-                                        else
-                                        {
-                                            _playerList.First(x => x.client == player.client).isAlive = false;
-                                        }
-                                    }
-                                }
-                                if (!player.isAlive)
-                                {
-                                    sendMsg(player.client, "LOST " + (leftPlayers )).GetAwaiter();
-                                    
-                                    _playerList.First(x => x.client == player.client).Rot = 0;
-                                    _playerList.First(x => x.client == player.client).points += _playerList.Count - leftPlayers;
-                                }
-                                if (leftPlayers == 1)
-                                {
-                                    var t = _playerList.First(x => x.isAlive == true).login;
-                                    sendMsg(_playerList.First(x => x.isAlive == true).client, "WIN").GetAwaiter();
-
-                                    boardInit = false;
-                                    gameStart = false;
-                                    leftPlayers = 0;
-                                    _playerList.First(x => x.client == player.client).Rot = 0;
-                                    _playerList.First(x => x.client == player.client).points += _playerList.Count-leftPlayers;
-                                    roundLeft--;
-                                    gameState = 1;
-                                    board = null;
-                                    Logger.WriteLine("Round: "+roundLeft + " Winner: "+t );
-                                    Thread.Sleep(1000);
-                                }
-                                //   Logger.WriteLine("TICKmove: " + player.id);
-
-                            }
-
-                            boardFormated = "";
-
-                            Thread.Sleep(Tick);
-
-                        }
-
-                    }
-                    
-                }
+                gameState = Stage0(gameState);
+                gameState = Stage1(gameState);
+                Stage2(ref gameState, ref loggedplayers);
+                Stage3(ref gameState, ref gameStart, ref boardInit);
             }
 
 
 
         }
 
-        public int Move(int rota, String move)
+        private int Stage0(int gameState)
+        {
+            if (gameState == 0)
+            {
+                foreach (var client in _clients)
+                {
+                    String p = ReceivePacket(client).GetAwaiter().GetResult();
+
+
+                    //var item = _playerList.FirstOrDefault(x => x.client == client && x.login == "");
+
+                    bool logged = false;
+                    var playerLoginCheck = _playerList.Where(tempPlayerCheck => tempPlayerCheck.client.Client.RemoteEndPoint == client.Client.RemoteEndPoint &&
+                                tempPlayerCheck.login != null);
+
+
+                    if ((p != null && p.Contains("LOGIN")) && !playerLoginCheck.Any() && !logged)
+                    {
+                        _playerList.Add(new Player(client, p.Split(' ')[1], _clients.IndexOf(client) + 1,
+                                        0, true, 0, 0, 0));
+                        var playerCl = _playerList.First(x => x.client == client);
+                        Logger.WriteLine("added: " + playerCl.login);
+                        /*
+                        Logger.WriteLine(playerCl.id);
+                        Logger.WriteLine(playerCl.login);
+                        Logger.WriteLine(playerCl.posX);
+                        Logger.WriteLine(playerCl.posY);
+                        Logger.WriteLine(playerCl.Rot);*/
+                        sendMsg(client, "OK").GetAwaiter();
+                        logged = true;
+                        if (_playerList.Count == playerReq) gameState = 1;
+                    }
+                    if ((p != null) && playerLoginCheck.Any() && !logged)
+                    {
+                        sendMsg(client, "ERROR").GetAwaiter();
+                    }
+                }
+            }
+
+            return gameState;
+        }
+
+        private int Stage1(int gameState)
+        {
+            if (gameState == 1)
+            {
+                if (roundLeft == 0)
+                {
+                    var rank = _playerList.OrderBy(r => r.points).ToList();
+                    String endrank = "ENDGAME ";
+                    foreach (var r in rank)
+                    {
+                        endrank += r.login.ToString() + " ";
+                    }
+                    foreach (var r in rank)
+                    {
+                        sendMsg(r.client, endrank).GetAwaiter();
+                    }
+                    Thread.Sleep(100000000);
+                }
+                Logger.WriteLine("Step1");
+                //Thread.Sleep(5000);
+                //rand.Next(0, 100)
+                String playerpos = "PLAYERS ";
+                foreach (var pl in _playerList)
+                {
+                    _playerList.First(x => x.client == pl.client).posX = rand.Next(0, 100);
+                    _playerList.First(x => x.client == pl.client).posY = rand.Next(0, 100);
+                    _playerList.First(x => x.client == pl.client).isAlive = true;
+                }
+                foreach (var pl in _playerList)
+                {
+                    if (roundCount == roundLeft) sendMsg(pl.client, "START " + pl.id).GetAwaiter();
+                    playerpos += (pl.posX.ToString() + " " + pl.posY.ToString() + " ");
+                }
+                foreach (var pl in _playerList)
+                {
+                    sendMsg(pl.client, playerpos).GetAwaiter();
+                }
+                gameState = 2;
+            }
+
+            return gameState;
+        }
+
+        private void Stage2(ref int gameState, ref int loggedplayers)
+        {
+            if (gameState == 2 && roundLeft != 0)
+            {
+                // Logger.WriteLine("Step2");
+                // Logger.WriteLine("Step2");
+                //Thread.Sleep(5000);
+
+                foreach (var player in _playerList)
+                {
+                    if (loggedplayers < _playerList.Count)
+                    {
+                        String p = ReceivePacket(player.client).GetAwaiter().GetResult();
+                        // if (p != null) Logger.WriteLine(p + "Len" + p.Length);
+                        var isPos = _playerList.First(x => x.client == player.client).Rot;
+                        bool check = false;
+                        // if (p != null) Logger.WriteLine(p.Length);
+                        if (p != null && p.Contains("BEGIN N") && p.Length == 8 && isPos == 0 && !check)
+                        {
+                            // Logger.WriteLine(p + "Len" + p.Length);
+                            _playerList.First(x => x.client == player.client).Rot = 1;
+                            sendMsg(player.client, "OK").GetAwaiter();
+                            check = true;
+                            loggedplayers++;
+                        }
+                        if (p != null && p.Contains("BEGIN S") && p.Length == 8 && isPos == 0 && !check)
+                        {
+
+                            _playerList.First(x => x.client == player.client).Rot = 3;
+                            sendMsg(player.client, "OK").GetAwaiter();
+                            check = true;
+                            loggedplayers++;
+                        }
+                        if (p != null && p.Contains("BEGIN W") && p.Length == 8 && isPos == 0 && !check)
+                        {
+
+                            _playerList.First(x => x.client == player.client).Rot = 4;
+                            sendMsg(player.client, "OK").GetAwaiter();
+                            check = true;
+                            loggedplayers++;
+                        }
+                        if (p != null && p.Contains("BEGIN E") && p.Length == 8 && isPos == 0 && !check)
+                        {
+
+                            _playerList.First(x => x.client == player.client).Rot = 2;
+                            sendMsg(player.client, "OK").GetAwaiter();
+                            check = true;
+                            loggedplayers++;
+                        }
+                        if (p != null && !p.Contains("BEGIN E") && !p.Contains("BEGIN W") && !p.Contains("BEGIN S") && !p.Contains("BEGIN N") && p.Length != 8)
+                        {
+                            sendMsg(player.client, "ERROR").GetAwaiter();
+                        }
+                    }
+                    if (loggedplayers == _playerList.Count)
+                    {
+                        loggedplayers = 0;
+                        gameState = 3;
+                    }
+
+                }
+
+            }
+        }
+
+        private void Stage3(ref int gameState, ref bool gameStart, ref bool boardInit)
+        {
+            if (gameState == 3)
+            {
+
+                //Logger.WriteLine("Step3");
+                if (!boardInit)
+                {
+                    board = initBoard();
+                    boardInit = true;
+                }
+                // Thread.Sleep(1000);
+                if (boardInit)
+                {
+                    if (!gameStart)
+                    {
+                        foreach (var player in _playerList)
+                        {
+                            sendMsg(player.client, "GAME").GetAwaiter();
+                        }
+                        gameStart = true;
+                    }
+                    if (gameStart)
+                    {
+
+                        String boardFormated = "BOARD ";
+                        for (int i = 0; i < board.GetLength(0); i++)
+                        {
+                            for (int k = 0; k < board.GetLength(1); k++)
+                            {
+                                boardFormated += (board[i, k]) + " ";
+                            }
+
+                            boardFormated += "\n";
+                        }
+                        foreach (var player in _playerList)
+                        {
+                            if (_playerList.First(x => x.client == player.client).isAlive)
+                            {
+                                sendMsg(player.client, boardFormated).GetAwaiter();
+                                Logger.WriteLine("Board send to " + player.client.Client.RemoteEndPoint);
+
+                            }
+                        }
+                        //TODO simulate move
+                        foreach (var player in _playerList)
+                        {
+
+                            int leftPlayers = _playerList.Where(x => x.isAlive == true).Count();
+                            // Logger.WriteLine("TICKmove: " + player.Rot);
+                            if (_playerList.First(x => x.client == player.client).isAlive)
+                            {
+                                String p = ReceivePacket(player.client).GetAwaiter().GetResult();
+                                if (p != null && (p.Contains("MOVE S") || p.Contains("MOVE R") || p.Contains("MOVE L")) && p.Length == 7)
+                                {
+
+                                    _playerList.First(x => x.client == player.client).Rot = Move(player.Rot, p);
+                                    sendMsg(player.client, "OK").GetAwaiter();
+
+
+                                }
+                                if (p != null && !(p.Contains("MOVE S") || p.Contains("MOVE R") || p.Contains("MOVE L")))
+                                {
+                                    sendMsg(player.client, "ERROR").GetAwaiter();
+                                }
+                                if (player.Rot == 4)
+                                {
+                                    if (player.posY - 1 > 0 && board[player.posX, player.posY - 1] == 0)
+                                    {
+                                        board[player.posX, player.posY - 1] = player.id;
+                                        // Logger.WriteLine("inN");
+                                        _playerList.First(x => x.client == player.client).posY = player.posY - 1;
+
+                                    }
+                                    else
+                                    {
+                                        _playerList.First(x => x.client == player.client).isAlive = false;
+                                    }
+
+                                }
+                                if (player.Rot == 2)
+                                {
+                                    if (player.posY + 1 < 100 && board[player.posX, player.posY + 1] == 0)
+                                    {
+                                        board[player.posX, player.posY + 1] = player.id;
+                                        _playerList.First(x => x.client == player.client).posY = player.posY + 1;
+                                    }
+                                    else
+                                    {
+                                        _playerList.First(x => x.client == player.client).isAlive = false;
+                                    }
+
+                                }
+                                if (player.Rot == 3)
+                                {
+                                    if (player.posX + 1 < 100 && board[player.posX + 1, player.posY] == 0)
+                                    {
+                                        board[player.posX + 1, player.posY] = player.id;
+                                        _playerList.First(x => x.client == player.client).posX = player.posX + 1;
+
+                                    }
+                                    else
+                                    {
+                                        _playerList.First(x => x.client == player.client).isAlive = false;
+                                    }
+                                }
+                                if (player.Rot == 1)
+                                {
+                                    if (player.posX - 1 > 0 && board[player.posX - 1, player.posY] == 0)
+                                    {
+                                        board[player.posX - 1, player.posY] = player.id;
+                                        _playerList.First(x => x.client == player.client).posX = player.posX - 1;
+                                    }
+                                    else
+                                    {
+                                        _playerList.First(x => x.client == player.client).isAlive = false;
+                                    }
+                                }
+                            }
+                            if (!player.isAlive)
+                            {
+                                sendMsg(player.client, "LOST " + (leftPlayers)).GetAwaiter();
+
+                                _playerList.First(x => x.client == player.client).Rot = 0;
+                                _playerList.First(x => x.client == player.client).points += _playerList.Count - leftPlayers;
+                            }
+                            if (leftPlayers == 1)
+                            {
+                                var X = _playerList.Where(x => x.isAlive == true);
+
+                                var t = _playerList.First(x => x.isAlive == true).login;
+
+
+
+
+                                sendMsg(_playerList.First(x => x.isAlive == true).client, "WIN").GetAwaiter();
+
+                                boardInit = false;
+                                gameStart = false;
+                                leftPlayers = 0;
+                                _playerList.First(x => x.client == player.client).Rot = 0;
+                                _playerList.First(x => x.client == player.client).points += _playerList.Count - leftPlayers;
+                                roundLeft--;
+                                gameState = 1;
+                                board = null;
+                                Logger.WriteLine("Round: " + roundLeft + " Winner: " + t);
+                                Thread.Sleep(1000);
+                            }
+                            //   Logger.WriteLine("TICKmove: " + player.id);
+
+                        }
+
+                        boardFormated = "";
+
+                        Thread.Sleep(Tick);
+
+                    }
+
+                }
+
+            }
+        }
+
+        private int Move(int rota, String move)
         {
             int rot = rota;
             int maxRot = 4;
@@ -387,7 +417,7 @@ namespace sieciServ
             }
             return rot;
         }
-        public int[,] initBoard()
+        private int[,] initBoard()
         {
             int[,] board = new int[100, 100];
             for (int i = 0; i < 100; i++)
