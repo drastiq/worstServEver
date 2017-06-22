@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace sieciProj
+namespace sieciServ
 {
 
     /**
@@ -48,7 +48,7 @@ namespace sieciProj
          * @return void
          */
 
-        public static void log(string msg)
+        public static void WriteLine(string msg)
         {
             if (msg.Length > 0)
             {

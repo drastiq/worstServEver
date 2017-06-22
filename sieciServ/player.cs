@@ -17,7 +17,8 @@ namespace sieciServ
         public bool isAlive { get; set; }
         public int posX { get; set; }
         public int posY { get; set; }
-        public Player(TcpClient _client, String _login, int _id, int _rot, bool _isAlive,int _posX,int _posY) {
+        public int points { get; set; }
+        public Player(TcpClient _client, String _login, int _id, int _rot, bool _isAlive,int _posX,int _posY,int _points) {
             client = _client;
             login = _login;
             id = _id;
@@ -25,6 +26,7 @@ namespace sieciServ
             isAlive = _isAlive;
             posX = _posX;
             posY = _posY;
+            points = _points;
         }
         
         //public int MyProperty { get; set; }
