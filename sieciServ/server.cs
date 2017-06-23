@@ -306,6 +306,8 @@ namespace sieciServ
 
                                 int leftPlayers = _playerList.Where(x => x.isAlive == true).Count();
                                 // Logger.WriteLine("TICKmove: " + player.Rot);
+                                Console.WriteLine("STAGE 3 IS PLAYER   " +_playerList.Contains(player));
+                                player.login = "kupa";
                                 if (_playerList.FirstOrDefault(x => x.client == player.client).isAlive)
                                 {
                                     String p = ReceivePacket(player.client).GetAwaiter().GetResult();
@@ -495,6 +497,7 @@ namespace sieciServ
         public async Task sendMsg(TcpClient client, string s)
         {
             string msg = string.Format($"{s}\n");
+            msg.Trim();//remove space end+begin
             NetworkStream ns = client.GetStream();
             byte[] bytesToSend = ASCIIEncoding.ASCII.GetBytes(msg);
             await ns.WriteAsync(bytesToSend, 0, bytesToSend.Length);

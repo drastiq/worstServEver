@@ -52,7 +52,7 @@ namespace sieciServ
         {
             if (msg.Length > 0)
             {
-                Console.WriteLine(msg+"\n");
+              //  Console.WriteLine(msg+"\n");
 
                 try
                 {
