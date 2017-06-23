@@ -18,11 +18,13 @@ namespace sieciServ
         public int posX { get; set; }
         public int posY { get; set; }
         public int points { get; set; }
-        public Player(TcpClient _client, String _login, int _id, int _rot, bool _isAlive,int _posX,int _posY,int _points) {
+        public bool isStillinGame { get; set; }
+        public Player(TcpClient _client, String _login, int _id, int _rot, bool _isAlive,bool _isInGame,int _posX,int _posY,int _points) {
             client = _client;
             login = _login;
             id = _id;
             Rot = _rot;
+            isStillinGame = _isInGame;
             isAlive = _isAlive;
             posX = _posX;
             posY = _posY;

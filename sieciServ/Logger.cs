@@ -52,10 +52,13 @@ namespace sieciServ
         {
             if (msg.Length > 0)
             {
-              //  Console.WriteLine(msg+"\n");
+                var temp = msg;
+                if(msg.Length>70)Console.WriteLine(temp.Substring(0,69)+"\n");
+                else Console.WriteLine(temp+ "\n");
 
                 try
                 {
+                    
                     using (StreamWriter sw = File.AppendText(Logger.filePath))
                     {
                         sw.WriteAsync(DateTime.Now.ToShortDateString() + " " + DateTime.Now.ToShortTimeString() + " " + msg + " \n").GetAwaiter() ;

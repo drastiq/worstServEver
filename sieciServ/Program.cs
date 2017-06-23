@@ -10,8 +10,8 @@ namespace sieciServ
     class Program
     {
         static void Main(string[] args)
-        {
-             server serv = new server("Test", 9000,8,3,500);
+        {                              //name port players round tick
+             server serv = new server("Test", 9000  ,4,    6,    500);
             serv.run();
 
            
