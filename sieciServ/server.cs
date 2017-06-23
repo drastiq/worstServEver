@@ -197,13 +197,13 @@ namespace sieciServ
                             }
 
                             // if (p != null) Logger.WriteLine(p + "Len" + p.Length);
-                            var isPos = _playerList.FirstOrDefault(x => x.client == player.client).Rot;
+                            var isPos = player.Rot;
                             bool check = false;
                             // if (p != null) Logger.WriteLine(p.Length);
                             if (p != null && p.Contains("BEGIN N") && p.Length == 8 && isPos == 0 && !check)
                             {
                                 // Logger.WriteLine(p + "Len" + p.Length);
-                                _playerList.FirstOrDefault(x => x.client == player.client).Rot = 1;
+                                player.Rot = 1;
                                 sendMsg(player.client, "OK").GetAwaiter();
                                 check = true;
                                 loggedplayers++;
@@ -211,7 +211,7 @@ namespace sieciServ
                             if (p != null && p.Contains("BEGIN S") && p.Length == 8 && isPos == 0 && !check)
                             {
 
-                                _playerList.FirstOrDefault(x => x.client == player.client).Rot = 3;
+                                player.Rot = 3;
                                 sendMsg(player.client, "OK").GetAwaiter();
                                 check = true;
                                 loggedplayers++;
@@ -219,7 +219,7 @@ namespace sieciServ
                             if (p != null && p.Contains("BEGIN W") && p.Length == 8 && isPos == 0 && !check)
                             {
 
-                                _playerList.FirstOrDefault(x => x.client == player.client).Rot = 4;
+                                player.Rot = 4;
                                 sendMsg(player.client, "OK").GetAwaiter();
                                 check = true;
                                 loggedplayers++;
@@ -227,7 +227,7 @@ namespace sieciServ
                             if (p != null && p.Contains("BEGIN E") && p.Length == 8 && isPos == 0 && !check)
                             {
 
-                                _playerList.FirstOrDefault(x => x.client == player.client).Rot = 2;
+                                player.Rot = 2;
                                 sendMsg(player.client, "OK").GetAwaiter();
                                 check = true;
                                 loggedplayers++;
@@ -293,7 +293,7 @@ namespace sieciServ
                             }
                             foreach (var player in _playerList)
                             {
-                                if (_playerList.FirstOrDefault(x => x.client == player.client).isAlive)
+                                if (player.isAlive)
                                 {
                                     sendMsg(player.client, boardFormated).GetAwaiter();
                                     Logger.WriteLine("Board send to " + player.client.Client.RemoteEndPoint);
@@ -305,16 +305,17 @@ namespace sieciServ
                             {
 
                                 int leftPlayers = _playerList.Where(x => x.isAlive == true).Count();
+                                
                                 // Logger.WriteLine("TICKmove: " + player.Rot);
-                                Console.WriteLine("STAGE 3 IS PLAYER   " +_playerList.Contains(player));
-                                player.login = "kupa";
-                                if (_playerList.FirstOrDefault(x => x.client == player.client).isAlive)
+                                //Console.WriteLine("STAGE 3 IS PLAYER   " +_playerList.Contains(player));
+                                //player.login = "kupa";
+                                if (player.isAlive)
                                 {
                                     String p = ReceivePacket(player.client).GetAwaiter().GetResult();
                                     if (p != null && (p.Contains("MOVE S") || p.Contains("MOVE R") || p.Contains("MOVE L")) && p.Length == 7)
                                     {
 
-                                        _playerList.FirstOrDefault(x => x.client == player.client).Rot = Move(player.Rot, p);
+                                        player.Rot = Move(player.Rot, p);
                                         sendMsg(player.client, "OK").GetAwaiter();
 
 
@@ -329,12 +330,12 @@ namespace sieciServ
                                         {
                                             board[player.posX, player.posY - 1] = player.id;
                                             // Logger.WriteLine("inN");
-                                            _playerList.FirstOrDefault(x => x.client == player.client).posY = player.posY - 1;
+                                            player.posY = player.posY - 1;
 
                                         }
                                         else
                                         {
-                                            _playerList.FirstOrDefault(x => x.client == player.client).isAlive = false;
+                                            player.isAlive = false;
                                         }
 
                                     }
@@ -343,11 +344,11 @@ namespace sieciServ
                                         if (player.posY + 1 < 100 && board[player.posX, player.posY + 1] == 0)
                                         {
                                             board[player.posX, player.posY + 1] = player.id;
-                                            _playerList.FirstOrDefault(x => x.client == player.client).posY = player.posY + 1;
+                                            player.posY = player.posY + 1;
                                         }
                                         else
                                         {
-                                            _playerList.FirstOrDefault(x => x.client == player.client).isAlive = false;
+                                            player.isAlive = false;
                                         }
 
                                     }
@@ -356,12 +357,12 @@ namespace sieciServ
                                         if (player.posX + 1 < 100 && board[player.posX + 1, player.posY] == 0)
                                         {
                                             board[player.posX + 1, player.posY] = player.id;
-                                            _playerList.FirstOrDefault(x => x.client == player.client).posX = player.posX + 1;
+                                            player.posX = player.posX + 1;
 
                                         }
                                         else
                                         {
-                                            _playerList.FirstOrDefault(x => x.client == player.client).isAlive = false;
+                                            player.isAlive = false;
                                         }
                                     }
                                     if (player.Rot == 1)
@@ -369,11 +370,11 @@ namespace sieciServ
                                         if (player.posX - 1 > 0 && board[player.posX - 1, player.posY] == 0)
                                         {
                                             board[player.posX - 1, player.posY] = player.id;
-                                            _playerList.FirstOrDefault(x => x.client == player.client).posX = player.posX - 1;
+                                            player.posX = player.posX - 1;
                                         }
                                         else
                                         {
-                                            _playerList.FirstOrDefault(x => x.client == player.client).isAlive = false;
+                                            player.isAlive = false;
                                         }
                                     }
                                 }
@@ -381,8 +382,8 @@ namespace sieciServ
                                 {
                                     sendMsg(player.client, "LOST " + (leftPlayers)).GetAwaiter();
 
-                                    _playerList.FirstOrDefault(x => x.client == player.client).Rot = 0;
-                                    _playerList.FirstOrDefault(x => x.client == player.client).points += _playerList.Count - leftPlayers;
+                                    player.Rot = 0;
+                                    player.points += _playerList.Count - leftPlayers;
                                 }
                                 if (leftPlayers == 1 || _playerList.Count == 1)
                                 {
@@ -398,8 +399,8 @@ namespace sieciServ
                                     boardInit = false;
                                     gameStart = false;
                                     leftPlayers = 0;
-                                    _playerList.FirstOrDefault(x => x.client == player.client).Rot = 0;
-                                    _playerList.FirstOrDefault(x => x.client == player.client).points += _playerList.Count - leftPlayers;
+                                    player.Rot = 0;
+                                    player.points += _playerList.Count - leftPlayers;
                                     roundLeft--;
                                     gameState = 1;
                                     board = null;
