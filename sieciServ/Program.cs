@@ -11,7 +11,7 @@ namespace sieciServ
     {
         static void Main(string[] args)
         {                              //name port players round tick
-             server serv = new server("Test", 9000  ,8,    6,    400);
+             server serv = new server("Test", 9000  ,8,    6,    500);
             serv.run();
 
            

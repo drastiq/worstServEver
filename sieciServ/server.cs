@@ -279,12 +279,14 @@ namespace sieciServ
                         if (gameStart)
                     {
                         string boardFormated = UpdateBoard();//update board
+                       // SendActivePlayers(); //zakomentowane poniewaz klienty innych nie przyjmowaly 
+
                         var leftPlayers = _playerList.Where(x => x.isAlive == true).Count();
-                       // Console.WriteLine(leftPlayers + "  ********************************");
+                        
                         foreach (var player in _playerList)
                         {
 
-                            
+
 
 
                             if (player.isAlive && player.isStillinGame)
@@ -376,7 +378,7 @@ namespace sieciServ
                                 player.points += _playerList.Count;
 
 
-                                Logger.WriteLine("Round: " + ( roundLeft) + " Winner: " + player.login);
+                                Logger.WriteLine("Round: " + (roundLeft) + " Winner: " + player.login);
                                 player.isAlive = false;
                                 player.isStillinGame = false;
 
@@ -390,17 +392,17 @@ namespace sieciServ
                                 gameStart = false;
                                 roundLeft--;
                                 board = initBoard();
-                                
+
                                 gameState = 1;
                                 break;
-                               // Stage1(gameState);
+                                // Stage1(gameState);
                             }
-                            
+
                         }
 
                         boardFormated = "";
 
-                        
+
 
                     }
 
@@ -408,6 +410,23 @@ namespace sieciServ
                // Thread.Sleep(Tick);
             }
 
+        }
+
+        private void SendActivePlayers()
+        {
+            string players = "PLAYERS ";
+            foreach (var item in _playerList)
+            {
+                if (item.isAlive == true)
+                {
+                    players += item.login + " ";
+                }
+            }
+            foreach (var item in _playerList)
+            {
+                sendMsg(item.client, players).GetAwaiter();
+
+            }
         }
 
         private string UpdateBoard()
