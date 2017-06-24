@@ -20,6 +20,8 @@ namespace sieciServ
         public readonly int playerReq;
         public readonly int Tick;
         public readonly int roundCount;
+      
+        public readonly int boardSize;
         public bool Running { get; private set; }
         //public String startMove = "NSWE";
         // Clients objects
@@ -30,7 +32,7 @@ namespace sieciServ
         private int[,] board;
         private int roundLeft;
         private int loggedplayers = 0;
-        public server(string name, int port, int _playerReq,int _round,  int _tick)
+        public server(string name, int port, int _playerReq,int _round,int _boardSize,  int _tick)
         {
             // Set some of the basic data
             Name = name;
@@ -39,7 +41,7 @@ namespace sieciServ
             playerReq = _playerReq;
             roundCount = _round;
             Tick = _tick;
-
+            boardSize = _boardSize;
             // Create the listener
             _listener = new TcpListener(IPAddress.Any, Port);
         }
@@ -58,7 +60,7 @@ namespace sieciServ
             //start server with basic conf
             int gameState = 0;
             Logger.WriteLine("Starting the "+Name+" Game(s) Server on port"+ Port +" .");
-            _listener.Start(10);
+            _listener.Start();
             
             bool gameStart = false;
             List<Task> newConnectionTasks = new List<Task>();
@@ -149,8 +151,8 @@ namespace sieciServ
                     String playerpos = "PLAYERS ";
                     foreach (var pl in _playerList)
                     {
-                        pl.posX = rand.Next(0, 100);
-                        pl.posY = rand.Next(0, 100);
+                        pl.posX = rand.Next(0, boardSize);
+                        pl.posY = rand.Next(0, boardSize);
                         pl.isAlive = true;
                         pl.isStillinGame = true;
                         pl.Rot = 0;
@@ -262,7 +264,7 @@ namespace sieciServ
                    //update board
                     if (!boardInit)
                     {
-                        board = initBoard();
+                        board = initBoard(boardSize);
                         boardInit = true;
                     }
                 
@@ -321,7 +323,7 @@ namespace sieciServ
                                 }
                                 if (player.Rot == 2)//east
                                 {
-                                    if ((player.posY + 1) < 100 && board[player.posX, (player.posY + 1)] == 0)
+                                    if ((player.posY + 1) < boardSize && board[player.posX, (player.posY + 1)] == 0)
                                     {
                                         board[player.posX, player.posY + 1] = player.id;
                                         player.posY = player.posY + 1;
@@ -334,7 +336,7 @@ namespace sieciServ
                                 }
                                 if (player.Rot == 3)//south
                                 {
-                                    if ((player.posX + 1) < 100 && board[(player.posX + 1), player.posY] == 0)
+                                    if ((player.posX + 1) < boardSize && board[(player.posX + 1), player.posY] == 0)
                                     {
                                         board[(player.posX + 1), player.posY] = player.id;
                                         player.posX = player.posX + 1;
@@ -391,7 +393,7 @@ namespace sieciServ
                                 boardInit = false;
                                 gameStart = false;
                                 roundLeft--;
-                                board = initBoard();
+                                board = initBoard(boardSize);
 
                                 gameState = 1;
                                 break;
@@ -481,12 +483,12 @@ namespace sieciServ
             }
             return rot;
         }
-        private int[,] initBoard()
+        private int[,] initBoard(int boards)
         {
-            int[,] board = new int[100, 100];
-            for (int i = 0; i < 100; i++)
+            int[,] board = new int[boards, boards];
+            for (int i = 0; i < boards; i++)
             {
-                for (int y = 0; y < 100; y++)
+                for (int y = 0; y < boards; y++)
                 {
                     board[i, y] = 0;
                 }
