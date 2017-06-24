@@ -53,8 +53,8 @@ namespace sieciServ
             if (msg.Length > 0)
             {
                 var temp = msg;
-                if(msg.Length>70)Console.WriteLine(temp.Substring(0,69)+"\n");
-                else Console.WriteLine(temp+ "\n");
+               if(msg.Length>70)Console.WriteLine(temp.Substring(0,69)+"\n");
+               else Console.WriteLine(temp+ "\n");
 
                 try
                 {
@@ -77,5 +77,5 @@ namespace sieciServ
 
             }
         }
-    }
+    } 
 }
